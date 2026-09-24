@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAVON ERP & Supply Chain v4.2</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pastel: {
+                            indigo: '#818CF8',
+                            indigoDark: '#4F46E5',
+                            indigoBg: '#EEF2FF',
+                            teal: '#2DD4BF',
+                            tealDark: '#0D9488',
+                            tealBg: '#CCFBF1',
+                            amber: '#FCD34D',
+                            amberDark: '#D97706',
+                            amberBg: '#FEF3C7',
+                            rose: '#F87171',
+                            roseDark: '#DC2626',
+                            roseBg: '#FEE2E2',
+                            emerald: '#34D399',
+                            emeraldDark: '#059669',
+                            emeraldBg: '#D1FAE5',
+                            slateBg: '#F8FAFC'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Smooth custom scrollbars for soft UI */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #818CF8; }
+        
+        .tab-active {
+            background-color: #FFFFFF;
+            color: #4F46E5;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+        }
+    </style>
+</head>
+<body class="h-full font-sans text-slate-700 bg-slate-100 flex flex-col antialiased select-none">
+
+    <!-- Application Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0 shadow-xs z-20">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-400 text-white flex items-center justify-center shadow-md shadow-indigo-200">
+                    <i data-lucide="boxes" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-slate-800 text-lg tracking-tight">TAVON <span class="text-indigo-600">ERP</span></span>
+                        <span class="bg-indigo-100 text-indigo-700 font-mono font-semibold text-[11px] px-2 py-0.5 rounded-full border border-indigo-200">v4.2</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-none">Gestion de Production, Stocks & Outillages de Précision</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Stats & Export Actions -->
+        <div class="flex items-center space-x-3">
+            <div class="hidden lg:flex items-center gap-4 text-xs bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-xl font-mono">
+                <div class="flex items-center gap-1.5 text-slate-600">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Centre d'Usinage: <strong class="text-slate-800">8/9 OK</strong></span>
+                </div>
+                <span class="text-slate-300">|</span>
+                <div class="flex items-center gap-1.5 text-slate-600">
+                    <span>Val. Stocks: <strong class="text-indigo-600">342 850 €</strong></span>
+                </div>
+            </div>
+
+            <button onclick="openCreateModal()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-sm transition-all">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nouveau Document</span>
+            </button>
+
+            <button onclick="exportERPDataXML()" class="bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-sm transition-all">
+                <i data-lucide="file-output" class="w-4 h-4"></i>
+                <span>Exporter XML</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Top Summary KPI Cards (Pastel Palette) -->
+    <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+        <!-- KPI 1: Stocks -->
+        <div class="bg-gradient-to-br from-indigo-50/80 to-indigo-100/40 border border-indigo-100 p-4 rounded-2xl flex items-center justify-between shadow-xs">
+            <div>
+                <span class="text-xs font-medium text-indigo-700 uppercase tracking-wider block">Articles en Stock</span>
+                <span class="text-2xl font-extrabold text-indigo-900 font-mono mt-0.5 block" id="kpi-stock-count">1 428</span>
+                <span class="text-[11px] text-indigo-600 font-medium">3 alerte(s) réappro.</span>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+                <i data-lucide="package" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- KPI 2: Achats -->
+        <div class="bg-gradient-to-br from-teal-50/80 to-teal-100/40 border border-teal-100 p-4 rounded-2xl flex items-center justify-between shadow-xs">
+            <div>
+                <span class="text-xs font-medium text-teal-800 uppercase tracking-wider block">Commandes Achats</span>
+                <span class="text-2xl font-extrabold text-teal-950 font-mono mt-0.5 block" id="kpi-achats-val">48 250 €</span>
+                <span class="text-[11px] text-teal-700 font-medium">4 livraisons cette semaine</span>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center">
+                <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- KPI 3: OF En cours -->
+        <div class="bg-gradient-to-br from-amber-50/80 to-amber-100/40 border border-amber-100 p-4 rounded-2xl flex items-center justify-between shadow-xs">
+            <div>
+                <span class="text-xs font-medium text-amber-800 uppercase tracking-wider block">OF en Fabrication</span>
+                <span class="text-2xl font-extrabold text-amber-950 font-mono mt-0.5 block" id="kpi-of-count">12 ACTIFS</span>
+                <span class="text-[11px] text-amber-700 font-medium">Taux d'avancement: 68%</span>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <i data-lucide="cog" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- KPI 4: Supply Chain -->
+        <div class="bg-gradient-to-br from-rose-50/80 to-rose-100/40 border border-rose-100 p-4 rounded-2xl flex items-center justify-between shadow-xs">
+            <div>
+                <span class="text-xs font-medium text-rose-800 uppercase tracking-wider block">Expéditions Client</span>
+                <span class="text-2xl font-extrabold text-rose-950 font-mono mt-0.5 block">6 EN TRANSIT</span>
+                <span class="text-[11px] text-rose-700 font-medium">Valeo, Sanofi, Airbus</span>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center">
+                <i data-lucide="truck" class="w-6 h-6"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <div class="flex-1 px-6 pb-6 flex flex-col min-h-0 overflow-hidden">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col h-full overflow-hidden">
+
+            <!-- Module Tabs Header -->
+            <div class="px-5 py-3 border-b border-slate-200 bg-slate-50/80 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
+                
+                <!-- Tab Controls -->
+                <div class="flex items-center bg-slate-200/70 p-1 rounded-xl text-xs font-semibold text-slate-600 gap-1 overflow-x-auto">
+                    <button onclick="switchTab('stocks')" id="tab-btn-stocks" class="px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all tab-active">
+                        <i data-lucide="package-search" class="w-4 h-4"></i>
+                        <span>Stocks & Inventaires</span>
+                    </button>
+
+                    <button onclick="switchTab('achats')" id="tab-btn-achats" class="px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all hover:text-slate-900">
+                        <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                        <span>Achats & Approvis.</span>
+                    </button>
+
+                    <button onclick="switchTab('of')" id="tab-btn-of" class="px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all hover:text-slate-900">
+                        <i data-lucide="factory" class="w-4 h-4"></i>
+                        <span>Ordres de Fabr. (OF)</span>
+                    </button>
+
+                    <button onclick="switchTab('supply')" id="tab-btn-supply" class="px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all hover:text-slate-900">
+                        <i data-lucide="navigation" class="w-4 h-4"></i>
+                        <span>Suivi Supply Chain</span>
+                    </button>
+                </div>
+
+                <!-- Search and Filters Bar -->
+                <div class="flex items-center gap-2.5">
+                    <div class="relative w-full md:w-64">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                        <input type="text" id="globalSearch" oninput="filterCurrentTable()" placeholder="Rechercher code, désignation..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-400 shadow-2xs">
+                    </div>
+
+                    <select id="statusFilter" onchange="filterCurrentTable()" class="bg-white border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-400 cursor-pointer shadow-2xs">
+                        <option value="ALL">Tous les statuts</option>
+                        <option value="CRITICAL">Alerte / Critique</option>
+                        <option value="IN_PROGRESS">En cours / Confirmé</option>
+                        <option value="OK">Livre / Conforme</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Table Views Container -->
+            <div class="flex-1 overflow-y-auto p-4">
+
+                <!-- 1. MODULE STOCKS TABLE -->
+                <div id="view-stocks" class="block">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold bg-slate-50/50">
+                                <th class="p-3 rounded-l-xl">Code Article</th>
+                                <th class="p-3">Désignation</th>
+                                <th class="p-3">Emplacement</th>
+                                <th class="p-3">Stock Actuel</th>
+                                <th class="p-3">Seuil Alerte</th>
+                                <th class="p-3">Valeur Unit. (€)</th>
+                                <th class="p-3">Statut</th>
+                                <th class="p-3 rounded-r-xl text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-stocks" class="divide-y divide-slate-100 font-medium">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2. MODULE ACHATS TABLE -->
+                <div id="view-achats" class="hidden">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold bg-slate-50/50">
+                                <th class="p-3 rounded-l-xl">N° Commande</th>
+                                <th class="p-3">Fournisseur</th>
+                                <th class="p-3">Designation Articles</th>
+                                <th class="p-3">Quantite</th>
+                                <th class="p-3">Livr. Prévue</th>
+                                <th class="p-3">Montant HT</th>
+                                <th class="p-3">Statut</th>
+                                <th class="p-3 rounded-r-xl text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-achats" class="divide-y divide-slate-100 font-medium">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3. MODULE OF TABLE -->
+                <div id="view-of" class="hidden">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold bg-slate-50/50">
+                                <th class="p-3 rounded-l-xl">N° OF</th>
+                                <th class="p-3">Client / Projet</th>
+                                <th class="p-3">Machine / Centre</th>
+                                <th class="p-3">Pièces (Réal / Prév)</th>
+                                <th class="p-3">Avancement</th>
+                                <th class="p-3">Dates</th>
+                                <th class="p-3">Statut</th>
+                                <th class="p-3 rounded-r-xl text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-of" class="divide-y divide-slate-100 font-medium">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4. MODULE SUPPLY CHAIN TABLE -->
+                <div id="view-supply" class="hidden">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold bg-slate-50/50">
+                                <th class="p-3 rounded-l-xl">N° Expédition</th>
+                                <th class="p-3">Client Destinataire</th>
+                                <th class="p-3">Incoterm</th>
+                                <th class="p-3">Transporteur</th>
+                                <th class="p-3">Colis / Palette</th>
+                                <th class="p-3">État Suivi</th>
+                                <th class="p-3 rounded-r-xl text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-supply" class="divide-y divide-slate-100 font-medium">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- Footer Pagination / Record Counter -->
+            <div class="px-5 py-2.5 border-t border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs text-slate-500 shrink-0">
+                <span id="recordCountText">Affichage de 5 enregistrements TAVON</span>
+                <span class="font-mono text-[11px] text-indigo-600 font-medium">Base Oracle TAVON-ERP #DB-2026-LIVE</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Detail Inspection Modal -->
+    <div id="modalDetail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                    </div>
+                    <span class="font-bold text-slate-800 text-sm" id="modalDetailTitle">Détail Fiche Article</span>
+                </div>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-3 text-xs" id="modalDetailBody">
+                <!-- Dynamically populated details -->
+            </div>
+
+            <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onclick="closeDetailModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-xs transition-all">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create New Document Modal -->
+    <div id="modalCreate" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-slate-200 bg-indigo-50/50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-indigo-500 text-white flex items-center justify-center">
+                        <i data-lucide="file-plus" class="w-4 h-4"></i>
+                    </div>
+                    <span class="font-bold text-slate-800 text-sm">Ajouter une Entrée TAVON</span>
+                </div>
+                <button onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="formNewEntry" onsubmit="handleFormSubmit(event)" class="p-5 space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Module Cible</label>
+                    <select id="formTargetModule" onchange="updateFormFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-medium focus:outline-none focus:border-indigo-400">
+                        <option value="stocks">Stock / Article</option>
+                        <option value="achats">Commande Achat</option>
+                        <option value="of">Ordre de Fabrication (OF)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1" id="labelCode">Code Article / Identifiant</label>
+                    <input type="text" id="inputCode" required placeholder="Ex: ART-998 / OF-2026-101" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:border-indigo-400">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1" id="labelDesc">Désignation / Projet</label>
+                    <input type="text" id="inputDesc" required placeholder="Ex: Résine PEEK / Moule Valéo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:border-indigo-400">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1" id="labelVal1">Quantité / Stock</label>
+                        <input type="number" id="inputVal1" required value="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:border-indigo-400">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1" id="labelVal2">Valeur (€) / Seuil</label>
+                        <input type="number" id="inputVal2" required value="450" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:border-indigo-400">
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeCreateModal()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-semibold">Annuler</button>
+                    <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl font-semibold shadow-xs">Enregistrer Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /* Mock Datasets for TAVON Industrial ERP */
+        let currentTab = 'stocks';
+
+        const stocksData = [
+            { code: 'RES-PEEK-150G', name: 'Résine PEEK Victrex 150G High-Temp', loc: 'Magasin A - Rack 04', qty: 45, alert: 100, price: 320.00, status: 'CRITICAL' },
+            { code: 'STEEL-12738-IMP', name: 'Acier Outillage Impax Supreme (1.2738)', loc: 'Magasin B - Bloc 12', qty: 12, alert: 5, price: 1850.00, status: 'OK' },
+            { code: 'EJECT-HASCO-6X150', name: 'Éjecteurs Nitrurés HASCO 6x150mm', loc: 'Magasin A - Tiroir 18', qty: 240, alert: 50, price: 14.50, status: 'OK' },
+            { code: 'RES-POM-C-NAT', name: 'Polyoctylène POM-C Naturel Granulés', loc: 'Silo Extérieur #2', qty: 1250, alert: 500, price: 8.20, status: 'OK' },
+            { code: 'HYD-PARKER-M12', name: 'Micro-Raccords Hydrauliques Parker M12', loc: 'Magasin C - Bac 03', qty: 18, alert: 40, price: 65.00, status: 'CRITICAL' }
+        ];
+
+        const achatsData = [
+            { id: 'ACH-2026-042', supplier: 'HASCO GmbH', items: 'Éjecteurs Nitrurés & Colonnes de guidage', qty: '350 pcs', date: '28/09/2026', amount: 4850.00, status: 'IN_PROGRESS' },
+            { id: 'ACH-2026-045', supplier: 'Evonik Specialty Resins', items: 'Polyamide PA66-GF30 Noir Automotive', qty: '2 500 kg', date: '02/10/2026', amount: 18200.00, status: 'IN_PROGRESS' },
+            { id: 'ACH-2026-048', supplier: 'Uddeholm Steel France', items: 'Acier Stavax ESR Recuit pour Empreinte', qty: '4 Blocs', date: '22/09/2026', amount: 12400.00, status: 'OK' },
+            { id: 'ACH-2026-051', supplier: 'Meusburger NV', items: 'Tiroirs Hydrauliques pré-montés E2600', qty: '6 Unités', date: '05/10/2026', amount: 6800.00, status: 'IN_PROGRESS' }
+        ];
+
+        const ofData = [
+            { id: 'OF-2026-089', client: 'Sanofi (Projet Médical)', machine: 'Presse 250T KraussMaffei', progress: 85, done: 8500, total: 10000, date: '15/09 - 30/09', status: 'IN_PROGRESS' },
+            { id: 'OF-2026-092', client: 'Valeo Automotive', machine: 'Centre Usinage 5-Axe Hermle', progress: 40, done: 1, total: 2, date: '20/09 - 10/10', status: 'IN_PROGRESS' },
+            { id: 'OF-2026-095', client: 'Airbus Aerospace', machine: 'Presse PEEK Haute Temp 500T', progress: 100, done: 500, total: 500, date: '01/09 - 22/09', status: 'OK' },
+            { id: 'OF-2026-098', client: 'Schneider Electric', machine: 'Érosion Enfonçage Sodick', progress: 15, done: 1, total: 4, date: '24/09 - 15/10', status: 'CRITICAL' }
+        ];
+
+        const supplyData = [
+            { id: 'EXP-2026-112', client: 'Valeo Vision (Étaples)', incoterm: 'DAP - Delivered at Place', carrier: 'Geodis Industrial', packages: '2 Palettes Europe', status: 'IN_PROGRESS' },
+            { id: 'EXP-2026-115', client: 'Sanofi Winthrop (Tours)', incoterm: 'FCA - Free Carrier TAVON', carrier: 'DHL Express Pharma', packages: '12 Cartons Scurisés', status: 'OK' },
+            { id: 'EXP-2026-118', client: 'Airbus Helicopters (Marignane)', incoterm: 'DDP - Duty Delivered Paid', carrier: 'Kuehne+Nagel Air', packages: '1 Caisse Boix Sur-Mesure', status: 'IN_PROGRESS' }
+        ];
+
+        /* Render Table Helper Functions */
+        function renderStocksTable(items) {
+            const tbody = document.getElementById('tbody-stocks');
+            tbody.innerHTML = items.map(item => `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3 font-mono font-bold text-indigo-600">${item.code}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.name}</td>
+                    <td class="p-3 text-slate-500">${item.loc}</td>
+                    <td class="p-3 font-mono font-bold ${item.qty <= item.alert ? 'text-rose-600' : 'text-slate-800'}">${item.qty} pcs</td>
+                    <td class="p-3 font-mono text-slate-400">${item.alert} pcs</td>
+                    <td class="p-3 font-mono text-slate-700">${item.price.toFixed(2)} €</td>
+                    <td class="p-3">
+                        ${item.qty <= item.alert 
+                            ? `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full text-[10px] font-bold">ALERTE REAPPRO</span>` 
+                            : `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">EN STOCK</span>`
+                        }
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="inspectDetail('stocks', '${item.code}')" class="text-indigo-500 hover:text-indigo-700 p-1 hover:bg-indigo-50 rounded-lg">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderAchatsTable(items) {
+            const tbody = document.getElementById('tbody-achats');
+            tbody.innerHTML = items.map(item => `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3 font-mono font-bold text-teal-600">${item.id}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.supplier}</td>
+                    <td class="p-3 text-slate-600">${item.items}</td>
+                    <td class="p-3 font-mono text-slate-700">${item.qty}</td>
+                    <td class="p-3 text-slate-500">${item.date}</td>
+                    <td class="p-3 font-mono font-bold text-slate-800">${item.amount.toFixed(2)} €</td>
+                    <td class="p-3">
+                        ${item.status === 'OK' 
+                            ? `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">LIVRÉ</span>` 
+                            : `<span class="bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-bold">EN TRANSIT</span>`
+                        }
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="inspectDetail('achats', '${item.id}')" class="text-teal-600 hover:text-teal-800 p-1 hover:bg-teal-50 rounded-lg">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderOFTable(items) {
+            const tbody = document.getElementById('tbody-of');
+            tbody.innerHTML = items.map(item => `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3 font-mono font-bold text-amber-600">${item.id}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.client}</td>
+                    <td class="p-3 text-slate-600">${item.machine}</td>
+                    <td class="p-3 font-mono text-slate-700">${item.done} / ${item.total}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                <div class="bg-amber-400 h-2 rounded-full" style="width: ${item.progress}%"></div>
+                            </div>
+                            <span class="font-mono text-[10px] text-slate-500">${item.progress}%</span>
+                        </div>
+                    </td>
+                    <td class="p-3 text-slate-500 font-mono text-[11px]">${item.date}</td>
+                    <td class="p-3">
+                        ${item.status === 'OK' 
+                            ? `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">TERMINÉ</span>` 
+                            : item.status === 'CRITICAL'
+                            ? `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono">RETARD</span>`
+                            : `<span class="bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-bold">USINAGE</span>`
+                        }
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="inspectDetail('of', '${item.id}')" class="text-amber-600 hover:text-amber-800 p-1 hover:bg-amber-50 rounded-lg">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderSupplyTable(items) {
+            const tbody = document.getElementById('tbody-supply');
+            tbody.innerHTML = items.map(item => `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3 font-mono font-bold text-rose-600">${item.id}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.client}</td>
+                    <td class="p-3 text-slate-500 font-mono">${item.incoterm}</td>
+                    <td class="p-3 text-slate-600">${item.carrier}</td>
+                    <td class="p-3 text-slate-600">${item.packages}</td>
+                    <td class="p-3">
+                        ${item.status === 'OK' 
+                            ? `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">REÇU CLIENT</span>` 
+                            : `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full text-[10px] font-bold">EN ROUTE</span>`
+                        }
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="inspectDetail('supply', '${item.id}')" class="text-rose-600 hover:text-rose-800 p-1 hover:bg-rose-50 rounded-lg">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        /* Switch Active Module Tab */
+        function switchTab(tabKey) {
+            currentTab = tabKey;
+            
+            // Hide all views
+            ['stocks', 'achats', 'of', 'supply'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-btn-${t}`).classList.remove('tab-active');
+            });
+
+            // Show selected view
+            document.getElementById(`view-${tabKey}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabKey}`).classList.add('tab-active');
+
+            filterCurrentTable();
+        }
+
+        /* Live Filtering Function */
+        function filterCurrentTable() {
+            const query = document.getElementById('globalSearch').value.toLowerCase();
+            const statusVal = document.getElementById('statusFilter').value;
+
+            if (currentTab === 'stocks') {
+                let filtered = stocksData.filter(i => 
+                    (i.code.toLowerCase().includes(query) || i.name.toLowerCase().includes(query)) &&
+                    (statusVal === 'ALL' || (statusVal === 'CRITICAL' && i.qty <= i.alert) || (statusVal === 'OK' && i.qty > i.alert))
+                );
+                renderStocksTable(filtered);
+                document.getElementById('recordCountText').innerText = `Affichage de ${filtered.length} article(s) en stock`;
+            } else if (currentTab === 'achats') {
+                let filtered = achatsData.filter(i => 
+                    (i.id.toLowerCase().includes(query) || i.supplier.toLowerCase().includes(query) || i.items.toLowerCase().includes(query)) &&
+                    (statusVal === 'ALL' || (statusVal === 'IN_PROGRESS' && i.status === 'IN_PROGRESS') || (statusVal === 'OK' && i.status === 'OK'))
+                );
+                renderAchatsTable(filtered);
+                document.getElementById('recordCountText').innerText = `Affichage de ${filtered.length} commande(s) d'achat`;
+            } else if (currentTab === 'of') {
+                let filtered = ofData.filter(i => 
+                    (i.id.toLowerCase().includes(query) || i.client.toLowerCase().includes(query) || i.machine.toLowerCase().includes(query)) &&
+                    (statusVal === 'ALL' || (statusVal === 'CRITICAL' && i.status === 'CRITICAL') || (statusVal === 'IN_PROGRESS' && i.status === 'IN_PROGRESS') || (statusVal === 'OK' && i.status === 'OK'))
+                );
+                renderOFTable(filtered);
+                document.getElementById('recordCountText').innerText = `Affichage de ${filtered.length} ordre(s) de fabrication`;
+            } else if (currentTab === 'supply') {
+                let filtered = supplyData.filter(i => 
+                    (i.id.toLowerCase().includes(query) || i.client.toLowerCase().includes(query) || i.carrier.toLowerCase().includes(query))
+                );
+                renderSupplyTable(filtered);
+                document.getElementById('recordCountText').innerText = `Affichage de ${filtered.length} expédition(s) client`;
+            }
+        }
+
+        /* Inspect Modal Popup */
+        function inspectDetail(module, key) {
+            const modal = document.getElementById('modalDetail');
+            const title = document.getElementById('modalDetailTitle');
+            const body = document.getElementById('modalDetailBody');
+
+            if (module === 'stocks') {
+                const item = stocksData.find(i => i.code === key);
+                title.innerText = `Fiche Stock Article: ${item.code}`;
+                body.innerHTML = `
+                    <div class="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 font-mono text-indigo-900">
+                        <strong>Code TAVON:</strong> ${item.code}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><strong>Désignation:</strong> ${item.name}</div>
+                        <div><strong>Emplacement:</strong> ${item.loc}</div>
+                        <div><strong>Quantité Actuelle:</strong> ${item.qty} pcs</div>
+                        <div><strong>Seuil d'Alerte:</strong> ${item.alert} pcs</div>
+                        <div><strong>Prix Unitaire:</strong> ${item.price.toFixed(2)} €</div>
+                        <div><strong>Valeur Totale Stock:</strong> ${(item.qty * item.price).toFixed(2)} €</div>
+                    </div>
+                `;
+            } else if (module === 'achats') {
+                const item = achatsData.find(i => i.id === key);
+                title.innerText = `Commande Achat Fournisseur: ${item.id}`;
+                body.innerHTML = `
+                    <div class="bg-teal-50/60 p-3 rounded-xl border border-teal-100 font-mono text-teal-900">
+                        <strong>N° Achat:</strong> ${item.id} | <strong>Fournisseur:</strong> ${item.supplier}
+                    </div>
+                    <div class="space-y-1">
+                        <p><strong>Articles Commandés:</strong> ${item.items}</p>
+                        <p><strong>Quantité:</strong> ${item.qty}</p>
+                        <p><strong>Montant Total HT:</strong> ${item.amount.toFixed(2)} €</p>
+                        <p><strong>Date de Livraison Prévue:</strong> ${item.date}</p>
+                    </div>
+                `;
+            } else if (module === 'of') {
+                const item = ofData.find(i => i.id === key);
+                title.innerText = `Détail Ordre de Fabrication: ${item.id}`;
+                body.innerHTML = `
+                    <div class="bg-amber-50/60 p-3 rounded-xl border border-amber-100 font-mono text-amber-900">
+                        <strong>OF Production:</strong> ${item.id} | <strong>Projet Client:</strong> ${item.client}
+                    </div>
+                    <div class="space-y-1">
+                        <p><strong>Centre d'Usinage / Presse:</strong> ${item.machine}</p>
+                        <p><strong>Avancement:</strong> ${item.done} sur ${item.total} pièces (${item.progress}%)</p>
+                        <p><strong>Planning de Production:</strong> ${item.date}</p>
+                    </div>
+                `;
+            } else if (module === 'supply') {
+                const item = supplyData.find(i => i.id === key);
+                title.innerText = `Suivi Expédition Client: ${item.id}`;
+                body.innerHTML = `
+                    <div class="bg-rose-50/60 p-3 rounded-xl border border-rose-100 font-mono text-rose-900">
+                        <strong>N° Suivi Expédition:</strong> ${item.id}
+                    </div>
+                    <div class="space-y-1">
+                        <p><strong>Destinataire:</strong> ${item.client}</p>
+                        <p><strong>Incoterm Logistique:</strong> ${item.incoterm}</p>
+                        <p><strong>Transporteur Référencé:</strong> ${item.carrier}</p>
+                        <p><strong>Conditionnement:</strong> ${item.packages}</p>
+                    </div>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('modalDetail').classList.add('hidden');
+        }
+
+        /* Modal Forms and New Record Actions */
+        function openCreateModal() {
+            document.getElementById('modalCreate').classList.remove('hidden');
+            updateFormFields();
+        }
+
+        function closeCreateModal() {
+            document.getElementById('modalCreate').classList.add('hidden');
+        }
+
+        function updateFormFields() {
+            const target = document.getElementById('formTargetModule').value;
+            if (target === 'stocks') {
+                document.getElementById('labelCode').innerText = "Code Article (ex: ART-100)";
+                document.getElementById('labelDesc').innerText = "Désignation Matériau/Outillage";
+                document.getElementById('labelVal1').innerText = "Quantité en Stock";
+                document.getElementById('labelVal2').innerText = "Valeur Unit. (€)";
+            } else if (target === 'achats') {
+                document.getElementById('labelCode').innerText = "N° Commande Achat";
+                document.getElementById('labelDesc').innerText = "Fournisseur & Matériaux";
+                document.getElementById('labelVal1').innerText = "Quantité Totale";
+                document.getElementById('labelVal2').innerText = "Montant HT (€)";
+            } else if (target === 'of') {
+                document.getElementById('labelCode').innerText = "N° Ordre de Fabr. (OF)";
+                document.getElementById('labelDesc').innerText = "Client / Projet Moule";
+                document.getElementById('labelVal1').innerText = "Pièces Prévues";
+                document.getElementById('labelVal2').innerText = "Temps Estimation (h)";
+            }
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const target = document.getElementById('formTargetModule').value;
+            const code = document.getElementById('inputCode').value;
+            const desc = document.getElementById('inputDesc').value;
+            const val1 = parseFloat(document.getElementById('inputVal1').value);
+            const val2 = parseFloat(document.getElementById('inputVal2').value);
+
+            if (target === 'stocks') {
+                stocksData.unshift({ code, name: desc, loc: 'Magasin Princ. - TAVON', qty: val1, alert: 20, price: val2, status: 'OK' });
+                switchTab('stocks');
+            } else if (target === 'achats') {
+                achatsData.unshift({ id: code, supplier: desc, items: 'Commande Spéciale TAVON', qty: `${val1} pcs`, date: '30/09/2026', amount: val2, status: 'IN_PROGRESS' });
+                switchTab('achats');
+            } else if (target === 'of') {
+                ofData.unshift({ id: code, client: desc, machine: 'Centre Usinage TAVON #1', progress: 10, done: 0, total: val1, date: '25/09 - 15/10', status: 'IN_PROGRESS' });
+                switchTab('of');
+            }
+
+            closeCreateModal();
+        }
+
+        /* Export Complete ERP Data to Standardized XML File */
+        function exportERPDataXML() {
+            let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<TavonERPExport timestamp="${new Date().toISOString()}" system="TAVON-ERP-v4.2">\n`;
+            
+            // Stocks Section
+            xmlContent += `  <InventaireStocks count="${stocksData.length}">\n`;
+            stocksData.forEach(item => {
+                xmlContent += `    <Article code="${item.code}">\n`;
+                xmlContent += `      <Designation>${item.name}</Designation>\n`;
+                xmlContent += `      <Emplacement>${item.loc}</Emplacement>\n`;
+                xmlContent += `      <Quantite>${item.qty}</Quantite>\n`;
+                xmlContent += `      <SeuilAlerte>${item.alert}</SeuilAlerte>\n`;
+                xmlContent += `      <PrixUnitaire currency="EUR">${item.price}</PrixUnitaire>\n`;
+                xmlContent += `    </Article>\n`;
+            });
+            xmlContent += `  </InventaireStocks>\n`;
+
+            // Achats Section
+            xmlContent += `  <CommandesAchats count="${achatsData.length}">\n`;
+            achatsData.forEach(item => {
+                xmlContent += `    <Commande id="${item.id}">\n`;
+                xmlContent += `      <Fournisseur>${item.supplier}</Fournisseur>\n`;
+                xmlContent += `      <Articles>${item.items}</Articles>\n`;
+                xmlContent += `      <MontantHT currency="EUR">${item.amount}</MontantHT>\n`;
+                xmlContent += `      <DateLivraison>${item.date}</DateLivraison>\n`;
+                xmlContent += `    </Commande>\n`;
+            });
+            xmlContent += `  </CommandesAchats>\n`;
+
+            xmlContent += `</TavonERPExport>`;
+
+            // Trigger Download
+            const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `tavon_erp_export_${new Date().toISOString().slice(0,10)}.xml`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        /* Initial Load */
+        window.onload = function() {
+            lucide.createIcons();
+            renderStocksTable(stocksData);
+        };
+    </script>
+</body>
+</html>
